@@ -1,0 +1,190 @@
+"""
+http://www.geeksforgeeks.org/encode-ascii-string-base-64-format/
+
+Encode an ASCII string into Base-64 Format
+
+Base 64 is an encoding scheme that converts binary data into text format so that encoded textual
+data can be easily transported over network un-corrupted and without any data loss. Base64 is
+used commonly in a number of applications including email via MIME, and storing complex data in
+XML.
+
+Problem with sending normal binary data to a network is that bits can be misinterpreted by
+underlying protocols, produce incorrect data at receiving node and that is why we use this code.
+
+==Why base 64 ?==
+
+Resultant text after encoding our data has those characters which are widely present in many
+character sets so there is very less chance of data being corrupted or modified.
+
+==How to convert into base 64 format ?==
+
+The character set in base64 is
+- - - - - - - - - - - - - - - - - - - -
+char_set = "ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz0123456789+/"
+// 64 characters
+- - - - - - - - - - - - - - - - - - - -
+
+==Basic idea==
+
+Lets take an example. We have to encode string "MENON" into base64 format. Lets call "MENON" as
+input_str, above base64 character set ("ABC..+/") as char_set and resultant encoded string as
+res_str.
+
+1. Take 3 characters from input_str i.e "MEN" since each character size is 8 bits we will have
+(8 * 3) 24 bits with us.
+
+2. Group them in a block of 6 bits each (24 / 6 = 4 blocks). (why 6?) because 2^6 = 64 characters,
+with 6 bits we can represent each character in char_set.
+
+3. Convert each block of 6 bits to its corresponding decimal value. Decimal value obtained is the
+index of resultant encoded character in char_set.
+
+4. So for each 3 characters from input_str we will receive 4 characters in res_str.
+
+5. What if we have less than 3 characters in input_str left i.e "ON". We have 16 bits and blocks
+will be 16 / 6 = 2 blocks. Rightmost 4 bits will not make a proper block (1 block = 6 bits) so we
+append zeros to right side of block to make it a proper block i.e 2 zeros will be appended to
+right. Now we have 3 proper blocks, find corresponding decimal value of each block to get index.
+
+6. Since There were less than 3 characters ("ON") in input_str we will append "=" in res_str. e.g
+"ON" here 3 – 2 = 1 padding of "=" in res_str.
+
+==Example==
+
+1. Convert "MENON" into its (8 bit) binary state format. Take each characters of the string and
+write its 8 – bit binary representation.
+
+ASCII values of characters in string to be encoded
+- - - - - - - - - - - - - - - - - - - - - - - - -
+M : 77 (01001101), E : 69 (01000101),
+N : 78 (01001110), O : 79 (01001111), N : 78 (01001110)
+- - - - - - - - - - - - - - - - - - - - - - - - -
+
+resultant binary data of above string is :
+- - - - - - - - - - - - - - - - - - - - - - - - -
+01001101 01000101 01001110 01001111 01001110
+- - - - - - - - - - - - - - - - - - - - - - - - -
+
+2. Starting from left make blocks of 6 bits until all bits are covered
+BIT-STREAM :
+- - - - - - - - - - - - - - - - - - - - - - - - -
+(010011) (010100) (010101) (001110) (010011) (110100) (1110)
+- - - - - - - - - - - - - - - - - - - - - - - - -
+
+3. If the rightmost block is less than 6 bits just append zeros to the right of that block to
+make it 6 bits. Here in above example we have to appended 2 zeros to make it 6.
+BIT-STREAM :
+- - - - - - - - - - - - - - - - - - - - - - - - -
+(010011) (010100) (010101) (001110) (010011) (110100) (111000)
+- - - - - - - - - - - - - - - - - - - - - - - - -
+
+Notice the bold zeros.
+
+4. Take 3 characters from input_str ("MEN") i.e 24 bits and find corresponding decimal value
+(index to char_set).
+BLOCKS :
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+INDEX --> (010011) : 19, (010100) : 20, (010101) : 21, (001110) : 14
+char_set[19] = T, char_set[20] = U, char_set[21] = V, char_set[14] = O
+So our input_str = "MEN" will be converted to encoded string "TUVO".
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+5. Take remaining characters ("ON"). We have to pad resultant encoded string with 1 "=" as number
+of characters is less than 3 in input_str. (3 – 2 = 1 padding)
+BLOCKS :
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+INDEX --> (010011) : 19 (110100) : 52 (111000) : 56
+char_set[19] = T char_set[52] = 0 char_set[21] = 4
+So our input_str = "ON" will be converted to encoded string "T04=".
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+Examples:
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Input : MENON // string in ASCII
+Output :TUVOT04= // encoded string in Base 64.
+
+Input : geeksforgeeks
+Output : Z2Vla3Nmb3JnZWVrcw==
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+==Approach :==
+We can use bitwise operators to encode our string. We can take an integer "val" (usually 4 bytes
+on most compilers) and store all characters of input_str (3 at a time) in val. The characters
+from input_str will be stored in val in form of bits. We will use (OR operator) to store the
+characters and (LEFT – SHIFT) by 8 so to make room for another 8 bits. In similar fashion we will
+use (RIGHT – SHIFT) to retrieve bits from val 6 at a time and find value of bits by doing & with
+63 (111111) which will give us index. Then we can get our resultant character by just going to
+that index of char_set.
+
+Time Complexity: O(2 * N) inserting bits into val + retrieving bits form val
+"""
+
+# Python program to encode an ASCII string in Base64 format
+
+SIZE = 1000
+
+
+class Base64Encode:
+    """Takes string to be encoded as input and its length and returns encoded string"""
+
+    def base64_encoder(self, input_str, len_str):
+        # Character set of base64 encoding scheme
+        char_set = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+        # Resultant string
+        res_str = [None] * 1000
+        padding = 0
+        k = 0
+
+        # Loop takes 3 characters at a time from input_str and stores it in val
+        for i in range(0, len_str, 3):
+            val = 0
+            count = 0
+            j = i
+
+            while j < len_str and j <= i + 2:
+                # binary data of input_str is stored in val
+                val = val << 8
+                # (A + 0 = A) stores character in val
+                val = val | ord(input_str[j])
+                # calculates how many time loop ran if "MEN" -> 3 otherwise "ON" -> 2
+                count += 1
+                j += 1
+
+            no_of_bits = count * 8
+            # calculates how many "=" to append after res_str.
+            padding = no_of_bits % 3
+            # extracts all bits from val (6 at a time) and find the value of each block
+            while no_of_bits != 0:
+                # retrieve the value of each block
+                if no_of_bits >= 6:
+                    temp = no_of_bits - 6
+                    index = (val >> temp) & 63  # binary of 63 is (111111) f
+                    no_of_bits -= 6
+                else:
+                    temp = 6 - no_of_bits
+                    # append zeros to right if bits are less than 6
+                    index = (val << temp) & 63
+                    no_of_bits = 0
+
+                res_str[k] = char_set[index]
+                k += 1
+
+        # padding is done here
+        for i in range(1, padding + 1):
+            res_str[k] = '='
+            k += 1
+
+        res_str[k] = ';'
+        return "".join(res_str[:k+1])
+
+
+if __name__ == '__main__':
+    test = Base64Encode()
+    input_str = "MENON"
+    len_str = len(input_str)
+
+    print("Input string is : %s\n" % input_str)
+    print("Encoded string is : %s\n" % test.base64_encoder(input_str, len_str))
